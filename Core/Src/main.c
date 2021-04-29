@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
+ * All rights reserved.</center></h2>
+ *
+ * This software component is licensed by ST under BSD 3-Clause license,
+ * the "License"; You may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at:
+ *                        opensource.org/licenses/BSD-3-Clause
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -53,7 +53,9 @@ UART_HandleTypeDef huart2;
 uint8_t ADCUpdateFlag = 0;
 uint16_t ADCFeedBack = 0;
 float vout = 0.00;
-uint16_t PWMOut = 3333;
+float vin = 0.00;
+uint16_t vv[2];
+uint16_t PWMOut = 3000;
 
 uint64_t _micro = 0;
 uint64_t TimeOutputLoop = 0;
@@ -112,52 +114,40 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM11_Init();
   /* USER CODE BEGIN 2 */
-  HAL_ADC_Start_IT(&hadc1);
-  	HAL_TIM_Base_Start(&htim3);
+	HAL_ADC_Start_IT(&hadc1);
+	HAL_TIM_Base_Start(&htim3);
 
-  	HAL_TIM_Base_Start(&htim1);
-  	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+	HAL_TIM_Base_Start(&htim1);
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 
-  	HAL_TIM_Base_Start_IT(&htim11);
+	HAL_TIM_Base_Start_IT(&htim11);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+	while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	 if (micros() - TimeOutputLoop > 1000) {
-		TimeOutputLoop = micros();
-		// #001
 
-		__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWMOut);
-		vout = PWMOut * 3.3*ADCFeedBack/40960000.00;
-		if (vout != 1)
-		{
-			PWMOut = 40960000.00/(ADCFeedBack * 3.3);
+		if (micros() - TimeOutputLoop > 1000) {
+			TimeOutputLoop = micros();
+			// #001
+
+			__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWMOut);
+			vout = 3.3 * ADCFeedBack * PWMOut / 40960000;
+			if(vout!=1)
+			{
+				PWMOut = 40960000/(3.3*ADCFeedBack);
+			}
+
 		}
-//		else if (vout > 1.008)
-//		{
-//			PWMOut = 40960000.00/(ADCFeedBack * 3.3);
-//		}
-//		else if (vout >= 0.992 && vout< 1.000)
-//		{
-//			PWMOut += 1;
-//		}
-//		else if (vout <= 1.008 && vout> 1.000)
-//		{
-//			PWMOut -= 1;
-//		}
-	}
+		if (ADCUpdateFlag) {
+			ADCUpdateFlag = 0;
+			//#002
+		}
 
-	if (ADCUpdateFlag) {
-		ADCUpdateFlag = 0;
-		//#002
 	}
-
-  }
   /* USER CODE END 3 */
 }
 
@@ -511,11 +501,10 @@ __inline__ uint64_t micros() {
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+	/* User can add his own implementation to report the HAL error return state */
+	__disable_irq();
+	while (1) {
+	}
   /* USER CODE END Error_Handler_Debug */
 }
 
